@@ -1,28 +1,35 @@
 @echo off
 cd /d "C:\Users\evkak\Desktop\www-loc\Poker_Mentor_lokal_im"
+echo.
 
-echo Checking environment...
-if not exist ".env" (
-    echo Creating .env file...
-    copy .env.example .env
-    echo Please edit .env file with your tokens!
-    pause
-    exit
-)
+echo ========================================
+echo    Poker Mentor Bot Launcher
+echo ========================================
+echo.
 
-if exist "poker_venv\Scripts\activate" (
-    call poker_venv\Scripts\activate
-) else (
-    echo Creating virtual environment...
+echo Step 1: Checking virtual environment...
+if not exist "poker_venv" (
+    echo Creating new virtual environment...
     python -m venv poker_venv
-    call poker_venv\Scripts\activate
-    pip install aiogram==3.17.0 aiohttp==3.9.0 sqlalchemy==2.0.23 python-dotenv==1.0.0
 )
 
-echo Running system check...
-python full_check.py
+echo Step 2: Activating virtual environment...
+call poker_venv\Scripts\activate.bat
+
+echo Step 3: Installing dependencies...
+pip install --upgrade pip
+pip install aiogram==3.17.0
+pip install aiohttp==3.9.0
+pip install sqlalchemy==2.0.23
+pip install python-dotenv==1.0.0
+
+echo Step 4: Checking installation...
+python -c "import aiogram; import aiohttp; import sqlalchemy; import dotenv; print('✅ All imports successful!')"
 
 echo.
-echo Starting Poker Mentor Bot...
+echo Step 5: Starting Poker Mentor Bot...
 python -m bot.main
-pause
+
+echo.
+echo Bot stopped. Press any key to exit...
+pause >nul
