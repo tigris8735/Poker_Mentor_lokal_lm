@@ -67,7 +67,7 @@ python main.py
 
 - **Backend**: Python 3.8+
 - **Telegram Bot**: Aiogram 3.x
-- **AI Integration**: LM Studio + Qwen模型
+- **AI Integration**: LM Studio + Qwen
 - **Database**: SQLite + SQLAlchemy
 - **Architecture**: Async/await, Modular Design
 
