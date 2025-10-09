@@ -1,47 +1,49 @@
 from aiogram import Router, types
 from aiogram.filters import Command
-from bot.services.ai_service import AIService
-import logging
+from bot.services.ai_service import ai_service
+from bot.services.database import Database
 
 router = Router()
-ai_service = AIService()
-logger = logging.getLogger(__name__)
+db = Database()
 
-# Храним состояние ожидания ответа
-user_states = {}
-
-@router.message(Command("analyze"))
-async def analyze_handler(message: types.Message):
-    user_states[message.from_user.id] = "waiting_analysis"
-    await message.answer("📝 Опиши раздачу для анализа:\n- Твоя рука\n- Позиция\n- Действия оппонентов\n- Банк")
-
-@router.message(Command("advice"))
-async def advice_handler(message: types.Message):
-    user_states[message.from_user.id] = "waiting_advice"
-    await message.answer("💡 Опиши игровую ситуацию для совета:")
-
-@router.message()
-async def handle_user_input(message: types.Message):
+@router.message(Command("analysis"))
+async def analysis_handler(message: types.Message):
+    hand_text = message.text.replace('/analysis', '').strip()
+    
+    if not hand_text:
+        await message.answer(
+            "📝 <b>Анализ покерной раздачи</b>\n\n"
+            "Опишите раздачу после команды /analysis\n\n"
+            "<b>Примеры:</b>\n"
+            "• <i>У меня A♠ K♠ на баттоне, противник рейзит с MP</i>\n"
+            "• <i>7♣ 2♦ на BB, оппонент ставит контбет на флопе J♥8♦3♣</i>\n"
+            "• <i>JJ в средней позиции, все фолдят до меня</i>",
+            parse_mode="HTML"
+        )
+        return
+    
     user_id = message.from_user.id
-    state = user_states.get(user_id)
+    db.increment_hand_analysis(user_id)
     
-    if not state:
-        return  # Игнорируем сообщения не в состоянии ожидания
+    await message.answer("🔍 Анализирую раздачу...")
     
-    try:
-        if state == "waiting_analysis":
-            await message.answer("🤔 Анализирую раздачу...")
-            analysis = await ai_service.analyze_hand(message.text)
-            await message.answer(f"🎯 Анализ раздачи:\n\n{analysis}")
-            
-        elif state == "waiting_advice":
-            await message.answer("💭 Обдумываю совет...")
-            advice = await ai_service.get_poker_advice(message.text)
-            await message.answer(f"📚 Совет:\n\n{advice}")
-            
-    except Exception as e:
-        logger.error(f"AI error: {e}")
-        await message.answer("❌ Ошибка при обращении к AI. Проверьте подключение к LM Studio.")
+    prompt = f"""
+    Проанализируй эту покерную раздачу как профессиональный тренер:
+
+    {hand_text}
+
+    Дай пошаговый анализ:
+    1. Оценка силы руки
+    2. Рекомендуемые действия на каждом улице
+    3. Математическое обоснование
+    4. Долгосрочная ожидаемая ценность (EV)
+    5. Рассинг оппонента
+
+    Отвечай кратко и по делу, используя покерную терминологию.
+    """
     
-    # Сбрасываем состояние
-    user_states.pop(user_id, None)
+    response = await ai_service.get_ai_response(prompt)
+    
+    db.save_ai_request(user_id, f"АНАЛИЗ: {hand_text}", response)
+    
+    await message.answer(f"📊 <b>Анализ раздачи:</b>\n\n{response}", parse_mode="HTML")

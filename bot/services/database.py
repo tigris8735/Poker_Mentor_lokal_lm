@@ -21,9 +21,13 @@ class Database:
         conn = self.get_connection()
         cursor = conn.cursor()
         
+        # Удаляем старые таблицы если есть (для чистого старта)
+        cursor.execute('DROP TABLE IF EXISTS ai_requests')
+        cursor.execute('DROP TABLE IF EXISTS users')
+        
         # Таблица пользователей
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
+            CREATE TABLE users (
                 user_id INTEGER PRIMARY KEY,
                 username TEXT,
                 first_name TEXT,
@@ -35,7 +39,7 @@ class Database:
         
         # Таблица запросов к AI
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS ai_requests (
+            CREATE TABLE ai_requests (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
                 prompt TEXT,

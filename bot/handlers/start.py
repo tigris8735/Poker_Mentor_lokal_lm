@@ -3,12 +3,19 @@ from aiogram.filters import Command
 
 router = Router()
 
-@router.message(Command("start"))
-async def start_handler(message: types.Message):
+@router.message(Command("help"))
+async def help_handler(message: types.Message):
     await message.answer(
-        "🤖 Привет! Я покерный помощник с AI.\n\n"
-        "Доступные команды:\n"
-        "/ask [вопрос] - задать вопрос AI\n"
-        "/analysis [раздача] - анализ покерной раздачи\n\n"
-        "Или просто напишите вопрос о покере!"
+        "🆘 <b>Помощь по командам:</b>\n\n"
+        "/start - Начало работы\n"
+        "/poker - Игра в покер с AI\n"
+        "/ask - Вопрос к AI-помощнику\n"
+        "/ask_advanced - Расширенный вопрос\n"
+        "/analysis - Анализ покерной раздачи\n"
+        "/stats - Ваша статистика\n"
+        "/game_stats - Статистика игр\n"
+        "/clear_context - Очистить контекст\n"
+        "/end_game - Завершить текущую игру\n"
+        "/help - Эта справка",
+        parse_mode="HTML"
     )

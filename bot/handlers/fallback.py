@@ -4,15 +4,15 @@ from bot.services.ai_service import ai_service
 router = Router()
 
 @router.message()
-async def general_handler(message: types.Message):
-    """Обработчик всех сообщений"""
+async def fallback_handler(message: types.Message):
+    """Обработчик всех сообщений не попавших в другие хендлеры"""
     text = message.text.strip()
     
     if not text or text.startswith('/'):
         return
     
-    # Если сообщение достаточно длинное, считаем его вопросом
-    if len(text) > 5:
-        await message.bot.send_chat_action(message.chat.id, "typing")
+    # Отвечаем только на достаточно длинные сообщения
+    if len(text) > 10:
+        await message.answer("💭 Анализирую ваш вопрос...")
         response = await ai_service.get_ai_response(text)
-        await message.answer(f"🎯 AI помощник:\n\n{response}")
+        await message.answer(f"🎯 <b>Poker Mentor:</b>\n\n{response}", parse_mode="HTML")
