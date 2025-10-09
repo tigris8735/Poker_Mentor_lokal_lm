@@ -1,8 +1,7 @@
 import asyncio
 import logging
-from aiogram import Bot, Dispatcher
+from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
-from aiogram import types
 from config.settings import BOT_TOKEN
 from bot.services.llm_client import llm_client
 from bot.services.database import Database
@@ -17,10 +16,11 @@ db = Database()
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
     user_id = message.from_user.id
-    username = message.from_user.username or message.from_user.first_name
+    username = message.from_user.username
+    first_name = message.from_user.first_name
     
     # Сохраняем пользователя в БД
-    db.save_user(user_id, username)
+    db.save_user(user_id, username, first_name)
     
     await message.answer(
         "🤖 Добро пожаловать в Poker Mentor AI!\n\n"
@@ -39,6 +39,9 @@ async def analysis_handler(message: types.Message):
         await message.answer("📝 Опишите раздачу для анализа:\n\nПример: 'У меня A♠ K♠ на баттоне, противник рейзит с MP'")
         return
     
+    user_id = message.from_user.id
+    db.increment_hand_analysis(user_id)
+    
     await message.answer("🔍 Анализирую раздачу...")
     
     prompt = f"""
@@ -54,6 +57,10 @@ async def analysis_handler(message: types.Message):
     """
     
     response = await llm_client.generate_response(prompt, 800)
+    
+    # Сохраняем запрос в БД
+    db.save_ai_request(user_id, hand_text, response)
+    
     await message.answer(f"📊 Анализ раздачи:\n\n{response}")
 
 @dp.message(Command("stats"))
@@ -70,7 +77,11 @@ async def stats_handler(message: types.Message):
 
 @dp.message()
 async def poker_advisor(message: types.Message):
-    text = message.text.strip().lower()
+    text = message.text.strip()
+    
+    # Пропускаем команды
+    if text.startswith('/'):
+        return
     
     # Покерные ключевые слова
     poker_terms = [
@@ -80,7 +91,7 @@ async def poker_advisor(message: types.Message):
         'комбинация', 'стратегия', 'odds', 'пот', 'ставка', 'аллын'
     ]
     
-    is_poker_question = any(term in text for term in poker_terms)
+    is_poker_question = any(term in text.lower() for term in poker_terms)
     
     if len(text) > 8 and is_poker_question:
         user_id = message.from_user.id
@@ -88,6 +99,10 @@ async def poker_advisor(message: types.Message):
         
         await message.answer("🤔 Анализирую вопрос...")
         response = await llm_client.generate_response(text)
+        
+        # Сохраняем запрос в БД
+        db.save_ai_request(user_id, text, response)
+        
         await message.answer(f"🎯 Профессиональный совет:\n\n{response}")
     elif len(text) > 5:
         await message.answer(
@@ -111,6 +126,7 @@ async def main():
         logging.error(f"❌ Ошибка: {e}")
     finally:
         await llm_client.close()
+        db.close()
         logging.info("👋 Бот остановлен")
 
 if __name__ == "__main__":
