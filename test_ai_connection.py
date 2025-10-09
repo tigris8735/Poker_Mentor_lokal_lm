@@ -1,35 +1,32 @@
 import asyncio
-import aiohttp
+import sys
 import os
-from dotenv import load_dotenv
 
-load_dotenv()
+# Добавляем корневую директорию в путь
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from bot.services.llm_client import llm_client
 
 async def test_ai():
-    url = os.getenv('LM_STUDIO_URL') + "/chat/completions"
+    print("🧪 Тестирование подключения к AI...")
     
-    test_data = {
-        "model": "qwen3-4b-2507",
-        "messages": [
-            {"role": "system", "content": "Ты покерный тренер."},
-            {"role": "user", "content": "Скажи привет на русском"}
-        ],
-        "temperature": 0.3,
-        "max_tokens": 50
-    }
+    test_prompts = [
+        "Привет! Как дела?",
+        "Какие карты лучше всего для старта в техасском холдеме?",
+        "Объясни базовую стратегию префлопа"
+    ]
     
+    for prompt in test_prompts:
+        print(f"\n📤 Вопрос: {prompt}")
+        response = await llm_client.generate_response(prompt, 200)
+        print(f"📥 Ответ: {response}")
+        print("─" * 50)
+
+async def main():
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, json=test_data, timeout=10) as response:
-                if response.status == 200:
-                    result = await response.json()
-                    print("✅ AI работает!")
-                    print(f"Ответ: {result['choices'][0]['message']['content']}")
-                else:
-                    print(f"❌ Ошибка AI: {response.status}")
-                    print(await response.text())
-    except Exception as e:
-        print(f"❌ Не удалось подключиться к AI: {e}")
+        await test_ai()
+    finally:
+        await llm_client.close()
 
 if __name__ == "__main__":
-    asyncio.run(test_ai())
+    asyncio.run(main())

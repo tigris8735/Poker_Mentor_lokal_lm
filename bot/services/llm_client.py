@@ -1,6 +1,6 @@
 import aiohttp
 import logging
-import os
+import json
 from config.settings import LM_STUDIO_URL, AI_MODEL
 
 class LLMClient:
@@ -16,7 +16,74 @@ class LLMClient:
             )
         return self.session
         
-    async def generate_response(self, prompt: str, max_tokens: int = 500):
+    async def generate_response(self, prompt: str, max_tokens: int = 500) -> str:
+        """
+        Генерирует ответ от нейросети через LM Studio
+        """
+        try:
+            session = await self.get_session()
+            
+            # Используем chat/completions эндпоинт для лучшего качества диалога
+            payload = {
+                "model": self.model,
+                "messages": [
+                    {
+                        "role": "system", 
+                        "content": "Ты - покерный тренер и помощник. Отвечай кратко и по делу, помогая пользователям улучшить их покерные навыки."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                "max_tokens": max_tokens,
+                "temperature": 0.7,
+                "top_p": 0.9,
+                "stream": False
+            }
+            
+            logging.info(f"🤖 Отправка запроса к LM Studio: {prompt[:100]}...")
+            
+            async with session.post(
+                f"{self.base_url}/v1/chat/completions",
+                json=payload,
+                headers={"Content-Type": "application/json"}
+            ) as response:
+                
+                if response.status == 200:
+                    result = await response.json()
+                    logging.info("✅ Успешный ответ от LM Studio")
+                    
+                    # Извлекаем текст ответа
+                    if "choices" in result and len(result["choices"]) > 0:
+                        message_content = result["choices"][0]["message"]["content"]
+                        logging.info(f"🤖 Ответ AI: {message_content[:100]}...")
+                        return message_content
+                    else:
+                        logging.error(f"❌ Неверный формат ответа: {result}")
+                        return "Извините, не удалось обработать ответ нейросети."
+                        
+                else:
+                    error_text = await response.text()
+                    logging.error(f"❌ Ошибка LM Studio: {response.status} - {error_text}")
+                    
+                    # Пробуем альтернативный эндпоинт completions
+                    return await self._try_completions_endpoint(prompt, max_tokens)
+                    
+        except aiohttp.ClientConnectorError as e:
+            logging.error(f"❌ Ошибка подключения к LM Studio: {e}")
+            return "Ошибка подключения к нейросети. Проверьте, запущен ли LM Studio."
+        except asyncio.TimeoutError:
+            logging.error("⏰ Таймаут подключения к LM Studio")
+            return "Нейросеть не отвечает. Попробуйте позже."
+        except Exception as e:
+            logging.error(f"❌ Неожиданная ошибка: {str(e)}")
+            return "Произошла непредвиденная ошибка."
+    
+    async def _try_completions_endpoint(self, prompt: str, max_tokens: int) -> str:
+        """
+        Альтернативный метод через эндпоинт completions
+        """
         try:
             session = await self.get_session()
             
@@ -28,25 +95,31 @@ class LLMClient:
                 "stream": False
             }
             
+            logging.info("🔄 Пробуем эндпоинт /v1/completions...")
+            
             async with session.post(
-                f"{self.base_url}/completions",
+                f"{self.base_url}/v1/completions",
                 json=payload,
                 headers={"Content-Type": "application/json"}
             ) as response:
                 
                 if response.status == 200:
                     result = await response.json()
-                    return result["choices"][0]["text"]
-                else:
-                    logging.error(f"LM Studio error: {response.status}")
-                    return None
                     
-        except aiohttp.ClientConnectorError:
-            logging.error("Cannot connect to LM Studio server")
-            return None
+                    if "choices" in result and len(result["choices"]) > 0:
+                        text_response = result["choices"][0]["text"]
+                        logging.info(f"✅ Ответ через completions: {text_response[:100]}...")
+                        return text_response
+                    else:
+                        return "Нейросеть вернула пустой ответ."
+                else:
+                    error_text = await response.text()
+                    logging.error(f"❌ Ошибка completions эндпоинта: {error_text}")
+                    return "Оба эндпоинта нейросети недоступны."
+                    
         except Exception as e:
-            logging.error(f"LLM error: {str(e)}")
-            return None
+            logging.error(f"❌ Ошибка альтернативного эндпоинта: {e}")
+            return "Все методы подключения к нейросети не сработали."
             
     async def close(self):
         if self.session:
