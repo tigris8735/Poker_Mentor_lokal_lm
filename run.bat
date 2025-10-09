@@ -1,0 +1,6 @@
+@echo off
+echo Activating virtual environment...
+call poker_venv\Scripts\activate
+echo Starting Poker Mentor Bot...
+python -m bot.main
+pause
