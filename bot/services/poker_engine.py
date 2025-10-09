@@ -23,15 +23,15 @@ class PokerEngine:
         """Раздает по 2 карты каждому игроку"""
         hands = [[] for _ in range(num_players)]
         
-        # Раздаем по 2 карты
-        for _ in range(2):
-            for i in range(num_players):
+        # Раздаем по 2 карты каждому игроку
+        for card_index in range(2):
+            for player_index in range(num_players):
                 if deck:
                     card = deck.pop()
-                    hands[i].append(card)
+                    hands[player_index].append(card)
         
         return hands, deck
     
     def format_hand(self, hand: List[str]) -> str:
         """Форматирует руку для отображения"""
-        return ' '.join(hand) if hand else 'Нет карт'
+        return ' '.join(hand) if len(hand) == 2 else ' '.join(hand) + ' (неполная рука)'
