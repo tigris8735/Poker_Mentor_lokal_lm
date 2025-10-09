@@ -5,8 +5,10 @@ from config.settings import BOT_TOKEN
 from bot.handlers.start import router as start_router
 from bot.handlers.game import router as game_router
 from bot.handlers.analysis import router as analysis_router
-from bot.handlers.learning import router as learning_router  # НОВЫЙ
+from bot.handlers.learning import router as learning_router
+from bot.handlers.game_actions import router as game_actions_router  # ДОБАВЛЯЕМ
 from bot.services.database import Database
+from bot.handlers.fallback import router as fallback_router
 
 logging.basicConfig(level=logging.INFO)
 
@@ -19,11 +21,14 @@ async def main():
     bot = Bot(token=BOT_TOKEN)
     dp = Dispatcher()
     
-    # Регистрация роутеров
+    # Регистрация ВСЕХ роутеров
     dp.include_router(start_router)
     dp.include_router(game_router)
     dp.include_router(analysis_router)
-    dp.include_router(learning_router)  # ДОБАВЛЯЕМ
+    dp.include_router(learning_router)
+    dp.include_router(game_actions_router)  # ДОБАВЛЯЕМ
+    # В регистрации роутеров добавьте:
+    dp.include_router(fallback_router)  # Должен быть ПОСЛЕДНИМ
     
     logging.info("Бот запущен с qwen")
     await dp.start_polling(bot)
