@@ -56,12 +56,12 @@ python main.py
 
 Полная документация проекта доступна в папке [docs/](./docs/):
 
-- [Бизнес-требования](./docs/01-business-requirements.md)
-- [Системный анализ](./docs/02-system-analysis.md) 
-- [План архитектуры](./docs/03-architecture-plan.md)
-- [Техническое задание](./docs/04-technical-specification.md)
-- [План тестирования](./docs/05-testing-plan.md)
-- [Отчет о приемке](./docs/06-project-acceptance-report.md)
+- [Бизнес-требования](https://github.com/tigris8735/Poker_Mentor_lokal_lm/blob/main/docs/01-business-requirements.md)
+- [Системный анализ](https://github.com/tigris8735/Poker_Mentor_lokal_lm/blob/main/docs/02-system-analysis.md)
+- [План архитектуры](https://github.com/tigris8735/Poker_Mentor_lokal_lm/blob/main/docs/03-architecture-plan.md)
+- [Техническое задание](https://github.com/tigris8735/Poker_Mentor_lokal_lm/blob/main/docs/04-technical-specification.md)
+- [План тестирования](https://github.com/tigris8735/Poker_Mentor_lokal_lm/blob/main/docs/05-testing-plan.md)
+- [Отчет о приемке](https://github.com/tigris8735/Poker_Mentor_lokal_lm/blob/main/docs/06-project-acceptance-report.md)
 
 ## 🛠 Технологический стек
 
