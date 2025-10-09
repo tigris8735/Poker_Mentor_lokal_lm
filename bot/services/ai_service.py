@@ -1,17 +1,19 @@
 import aiohttp
 import json
-from config.settings import LM_STUDIO_URL, AI_MODEL
+from config.settings import LM_STUDIO_URL, AI_MODEL, MAX_TOKENS, TEMPERATURE
 
 class AIService:
     def __init__(self):
         self.base_url = LM_STUDIO_URL
         self.model = AI_MODEL
+        self.max_tokens = MAX_TOKENS
+        self.temperature = TEMPERATURE
         self.headers = {
             "Content-Type": "application/json"
         }
     
     async def _make_request(self, prompt: str, system_message: str = None) -> str:
-        """Универсальный метод для запросов к DeepSeek через LM Studio"""
+        """Универсальный метод для запросов к Qwen через LM Studio"""
         
         messages = []
         
@@ -23,8 +25,8 @@ class AIService:
         data = {
             "model": self.model,
             "messages": messages,
-            "temperature": 0.7,
-            "max_tokens": 1024,
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
             "stream": False
         }
         
@@ -34,7 +36,7 @@ class AIService:
                     f"{self.base_url}/chat/completions",
                     headers=self.headers,
                     json=data,
-                    timeout=60
+                    timeout=30  # Уменьшаем таймаут для быстрой модели
                 ) as response:
                     if response.status == 200:
                         result = await response.json()
@@ -46,75 +48,41 @@ class AIService:
                 return f"Ошибка соединения: {str(e)}"
     
     async def analyze_hand(self, hand_data: str) -> str:
-        """Анализ покерной раздачи"""
-        system_message = """Ты профессиональный тренер по покеру Texas Hold'em. 
-        Анализируй раздачи объективно, указывай на ошибки и давай конкретные рекомендации.
-        Отвечай на русском языке."""
+        """Анализ покерной раздачи - оптимизировано для Qwen"""
+        system_message = """Ты покерный тренер. Отвечай кратко и по делу. 
+        Формат ответа: 
+        1. Оценка руки 
+        2. Основные ошибки 
+        3. Рекомендации
+        Максимум 3 предложения на пункт."""
         
         prompt = f"""
-        Проанализируй эту покерную раздачу и дай подробный разбор:
-
-        {hand_data}
-
-        Структура анализа:
-        1. Предварительная оценка руки
-        2. Анализ действий на каждой улице
-        3. Оценка решений игрока
-        4. Конкретные рекомендации на будущее
-
-        Будь строгим но конструктивным тренером.
+        Раздача: {hand_data}
+        Проанализируй кратко:
         """
         
         return await self._make_request(prompt, system_message)
     
     async def get_poker_advice(self, situation: str) -> str:
-        """Совет по игровой ситуации"""
-        system_message = """Ты опытный покерный тренер. Дай четкий, практический совет 
-        по конкретной игровой ситуации. Отвечай на русском."""
+        """Совет по игровой ситуации - оптимизировано для Qwen"""
+        system_message = "Дай короткий практический совет по покеру. 2-3 предложения."
         
-        prompt = f"""
-        Покерная ситуация: {situation}
-
-        Дай профессиональный совет по этой ситуации. Разбери:
-        - Оптимальную стратегию
-        - Распространенные ошибки
-        - Как улучшить игру в подобных спотах
-        """
+        prompt = f"Ситуация: {situation}. Какой твой совет?"
         
         return await self._make_request(prompt, system_message)
     
     async def explain_concept(self, concept: str) -> str:
-        """Объяснение покерной концепции"""
-        system_message = """Ть покерный ментор. Объясняй концепции понятно и с примерами.
-        Отвечай на русском."""
+        """Объяснение покерной концепции - оптимизировано для Qwen"""
+        system_message = "Объясни покерную концепцию просто и понятно. 3-4 предложения."
         
-        prompt = f"""
-        Объясни покерную концепцию: {concept}
-
-        В объяснении включи:
-        - Простое определение
-        - Практические примеры
-        - Как применять в игре
-        - Частые ошибки
-        """
+        prompt = f"Объясни: {concept}"
         
         return await self._make_request(prompt, system_message)
     
     async def generate_quiz(self, topic: str) -> str:
-        """Создание покерного квиза"""
-        system_message = """Ты создаешь обучающие покерные квизы. 
-        Создавай реалистичные игровые ситуации с вариантами ответов."""
+        """Создание покерного квиза - оптимизировано для Qwen"""
+        system_message = "Создай один вопрос по покеру с 4 вариантами ответов и правильным ответом."
         
-        prompt = f"""
-        Создай покерный квиз на тему: {topic}
-
-        Формат:
-        Вопрос: [реалистичная игровая ситуация]
-        Варианты ответов: A, B, C, D
-        Правильный ответ: [буква]
-        Объяснение: [подробное объяснение почему этот ответ правильный]
-
-        Сделай 1 качественный вопрос.
-        """
+        prompt = f"Тема: {topic}. Создай вопрос с вариантами A,B,C,D и укажи правильный ответ."
         
         return await self._make_request(prompt, system_message)
