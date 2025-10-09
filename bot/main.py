@@ -25,7 +25,7 @@ async def main():
     dp.include_router(analysis_router)
     dp.include_router(learning_router)  # ДОБАВЛЯЕМ
     
-    logging.info("Бот запущен с DeepSeek R1")
+    logging.info("Бот запущен с qwen")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
