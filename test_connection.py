@@ -1,25 +1,20 @@
 import asyncio
 import aiohttp
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
+from config.settings import LM_STUDIO_URL
 
 async def test_connection():
-    url = os.getenv('LM_STUDIO_URL', 'http://localhost:1234/v1') + "/models"
-    
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=10) as response:
+            async with session.get(f"{LM_STUDIO_URL}/models") as response:
                 if response.status == 200:
-                    data = await response.json()
                     print("✅ Подключение к LM Studio успешно!")
-                    print(f"Доступные модели: {[m['id'] for m in data['data']]}")
+                    models = await response.json()
+                    print(f"Доступные модели: {models}")
                 else:
-                    print(f"❌ Ошибка: {response.status}")
+                    print(f"❌ Ошибка HTTP: {response.status}")
     except Exception as e:
-        print(f"❌ Не удалось подключиться к {url}")
-        print(f"Ошибка: {e}")
+        print(f"❌ Ошибка подключения: {e}")
 
 if __name__ == "__main__":
     asyncio.run(test_connection())

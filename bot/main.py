@@ -2,6 +2,7 @@ import asyncio
 import logging
 from aiogram import Bot, Dispatcher
 from config.settings import BOT_TOKEN
+from bot.services.llm_client import llm_client
 
 # Импорты роутеров
 from bot.handlers.start import router as start_router
@@ -30,10 +31,14 @@ async def main():
     dp.include_router(analysis_router)
     dp.include_router(learning_router)
     dp.include_router(game_actions_router)
-    dp.include_router(fallback_router)  # Должен быть последним
+    dp.include_router(fallback_router)
     
-    logging.info("Бот запущен с qwen")
-    await dp.start_polling(bot)
+    logging.info("Бот запущен с LM Studio")
+    
+    try:
+        await dp.start_polling(bot)
+    finally:
+        await llm_client.close()
 
 if __name__ == "__main__":
     asyncio.run(main())
